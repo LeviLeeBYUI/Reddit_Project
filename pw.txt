@@ -1,0 +1,3 @@
+client_id=KhFRvc5ikIsitYphPDZhaw
+client_secret=NexE-3ZuKy2oeDtAIyM2nlJpGxz6eA
+user_agent=YOUR_USER_AGENT
