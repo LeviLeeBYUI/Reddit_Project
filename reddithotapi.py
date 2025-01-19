@@ -1,63 +1,95 @@
 import praw
-import nltk
-from nltk.tokenize import word_tokenize
-from nltk.corpus import stopwords
-from collections import Counter
-import matplotlib.pyplot as plt
+import pandas as pd
+import os
 
-# 필요한 NLTK 리소스 다운로드
-try:
-    nltk.data.find("tokenizers/punkt")
-except LookupError:
-    print("Downloading 'punkt'...")
-    nltk.download("punkt")
+# 설정 파일 읽기 함수
+def read_config(file_path):
+    config = {}
+    try:
+        with open(file_path, 'r') as file:
+            for line in file:
+                key, value = line.strip().split('=')
+                config[key] = value
+    except FileNotFoundError:
+        print(f"Error: {file_path} not found.")
+        exit(1)
+    except ValueError:
+        print("Error: Invalid format in the config file. Ensure each line is 'key=value'.")
+        exit(1)
+    return config
 
-try:
-    nltk.data.find("corpora/stopwords")
-except LookupError:
-    print("Downloading 'stopwords'...")
-    nltk.download("stopwords")
+# Reddit API 데이터 가져오기 함수
+def fetch_reddit_data():
+    # `config.txt` 파일에서 Reddit API 정보 읽기
+    config = read_config("config.txt")  # 파일 경로 수정
+    print("Loaded configuration:", config)  # 디버깅용 출력
 
-# Reddit API 설정
-reddit = praw.Reddit(
-    client_id = "KhFRvc5ikIsitYphPDZhaw",
-    client_secret = "NexE-3ZuKy2oeDtAIyM2nlJpGxz6eA",
-    user_agent = "YOUR_USER_AGENT",
-)
+    # Reddit API 초기화
+    try:
+        reddit = praw.Reddit(
+            client_id=config["client_id"],
+            client_secret=config["client_secret"],
+            user_agent=config["user_agent"]
+        )
+        print("Reddit API connection successful.")
+    except KeyError as e:
+        print(f"Error: Missing configuration key: {e}")
+        exit(1)
+    except Exception as e:
+        print(f"Error: {e}")
+        exit(1)
 
-# 특정 서브레딧에서 Hot Posts 가져오기
-subreddit = reddit.subreddit("datascience")  # 원하는 서브레딧 지정
-hot_posts = subreddit.hot(limit=100)  # 상위 100개의 핫 게시물 가져오기
+    return reddit
 
-# 단어 저장용 리스트
-all_words = []
+# 핫 게시물 데이터 가져오기
+def fetch_hot_posts(reddit, subreddit_name, limit=500):
+    subreddit = reddit.subreddit(subreddit_name)
+    posts = []
 
-# Hot Posts에서 단어 추출
-for post in hot_posts:
-    print(f"Title: {post.title}")  # 제목 출력 (선택)
-    tokens = word_tokenize(post.title)  # 제목에서 단어 추출
-    filtered_tokens = [
-        word.lower() for word in tokens if word.isalnum()  # 알파벳/숫자만 포함
-        and word.lower() not in stopwords.words("english")  # 불용어 제거
-    ]
-    all_words.extend(filtered_tokens)  # 단어 리스트에 추가
+    try:
+        for post in subreddit.hot(limit=limit):
+            posts.append({
+                "id": post.id,
+                "title": post.title,
+                "selftext": post.selftext,
+                "score": post.score,
+                "num_comments": post.num_comments,
+                "created_utc": post.created_utc,
+                "subreddit": post.subreddit.display_name
+            })
+        print(f"Fetched {len(posts)} posts from subreddit: {subreddit_name}")
+    except Exception as e:
+        print(f"Error while fetching posts: {e}")
+        exit(1)
 
-# 단어 빈도 계산
-word_freq = Counter(all_words)
+    return posts
 
-# 상위 10개 단어 출력
-print("\nTop 10 Words in Hot Posts:")
-for word, freq in word_freq.most_common(10):
-    print(f"{word}: {freq}")
+# 데이터 저장
+def save_to_csv(posts, output_file):
+    # DataFrame 생성
+    df = pd.DataFrame(posts)
 
-# 단어 빈도 시각화
-most_common_words = word_freq.most_common(10)
-words, counts = zip(*most_common_words)
+    # 제목이나 본문이 비어 있는 경우 제거
+    df = df.dropna(subset=["title", "selftext"])
 
-plt.bar(words, counts)
-plt.xlabel("Words")
-plt.ylabel("Frequency")
-plt.title("Top 10 Words in Hot Reddit Posts")
-plt.xticks(rotation=45)
-plt.tight_layout()
-plt.show()
+    # CSV 저장
+    try:
+        df.to_csv(output_file, index=False)
+        print(f"Data saved to {output_file}")
+    except Exception as e:
+        print(f"Error saving data to CSV: {e}")
+        exit(1)
+
+# 메인 실행
+if __name__ == "__main__":
+    # Reddit API 초기화
+    reddit = fetch_reddit_data()
+
+    # 서브레딧 이름 및 데이터 수집
+    subreddit_name = "datascience"  # 원하는 서브레딧 이름
+    posts = fetch_hot_posts(reddit, subreddit_name, limit=500)
+
+    # 데이터 저장
+    output_file = os.path.join(os.getcwd(), "reddit_hot_posts.csv")
+    save_to_csv(posts, output_file)
+[]

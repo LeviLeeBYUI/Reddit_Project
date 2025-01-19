@@ -17,7 +17,7 @@ def read_config(file_path):
 
 def fetch_reddit_data():
     # `pw.txt` 파일에서 Reddit API 정보 읽기
-    config = read_config("pw.txt")  # 파일 경로 수정
+    config = read_config("config.txt")  # 파일 경로 수정
     print("Loaded configuration:", config)  # 디버깅용 출력
     
     reddit = praw.Reddit(
