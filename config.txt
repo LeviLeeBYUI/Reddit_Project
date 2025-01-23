@@ -1,3 +1,9 @@
 client_id=KhFRvc5ikIsitYphPDZhaw
 client_secret=NexE-3ZuKy2oeDtAIyM2nlJpGxz6eA
 user_agent=YOUR_USER_AGENT
+snowflake_user=dlrbqls5126
+snowflake_password=!Dl970611
+snowflake_account=ztb10616.us-west-2
+snowflake_warehouse=COMPUTE_WH
+snowflake_database=SENIOR_PROJECT
+snowflake_schema=PUBLIC

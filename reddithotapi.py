@@ -21,7 +21,7 @@ def read_config(file_path):
 # Reddit API 데이터 가져오기 함수
 def fetch_reddit_data():
     # `config.txt` 파일에서 Reddit API 정보 읽기
-    config = read_config("config.txt")  # 파일 경로 수정
+    config = read_config("config.txt")
     print("Loaded configuration:", config)  # 디버깅용 출력
 
     # Reddit API 초기화
@@ -42,54 +42,46 @@ def fetch_reddit_data():
     return reddit
 
 # 핫 게시물 데이터 가져오기
-def fetch_hot_posts(reddit, subreddit_name, limit=500):
-    subreddit = reddit.subreddit(subreddit_name)
-    posts = []
+def fetch_hot_posts(reddit, subreddits, limit=500):
+    all_posts = []
 
-    try:
-        for post in subreddit.hot(limit=limit):
-            posts.append({
-                "id": post.id,
-                "title": post.title,
-                "selftext": post.selftext,
-                "score": post.score,
-                "num_comments": post.num_comments,
-                "created_utc": post.created_utc,
-                "subreddit": post.subreddit.display_name
-            })
-        print(f"Fetched {len(posts)} posts from subreddit: {subreddit_name}")
-    except Exception as e:
-        print(f"Error while fetching posts: {e}")
-        exit(1)
+    for subreddit_name in subreddits:
+        print(f"Collecting data from subreddit: {subreddit_name}")
+        subreddit = reddit.subreddit(subreddit_name)
 
-    return posts
+        try:
+            for post in subreddit.hot(limit=limit):
+                all_posts.append({
+                    "id": post.id,
+                    "title": post.title,
+                    "selftext": post.selftext,
+                    "score": post.score,
+                    "num_comments": post.num_comments,
+                    "created_utc": post.created_utc,
+                    "subreddit": post.subreddit.display_name
+                })
+            print(f"Fetched {len(all_posts)} posts from subreddit: {subreddit_name}")
+        except Exception as e:
+            print(f"Error while fetching posts from {subreddit_name}: {e}")
+    
+    return all_posts
 
 # 데이터 저장
 def save_to_csv(posts, output_file):
-    # DataFrame 생성
     df = pd.DataFrame(posts)
+    os.makedirs(os.path.dirname(output_file), exist_ok=True)  # 경로가 없으면 생성
+    df.to_csv(output_file, index=False)
+    print(f"Data saved to {output_file}")
 
-    # 제목이나 본문이 비어 있는 경우 제거
-    df = df.dropna(subset=["title", "selftext"])
-
-    # CSV 저장
-    try:
-        df.to_csv(output_file, index=False)
-        print(f"Data saved to {output_file}")
-    except Exception as e:
-        print(f"Error saving data to CSV: {e}")
-        exit(1)
-
-# 메인 실행
+# 실행
 if __name__ == "__main__":
-    # Reddit API 초기화
+    # Reddit API 연결
     reddit = fetch_reddit_data()
 
-    # 서브레딧 이름 및 데이터 수집
-    subreddit_name = "datascience"  # 원하는 서브레딧 이름
-    posts = fetch_hot_posts(reddit, subreddit_name, limit=500)
+    # 데이터 수집
+    subreddit_name = "datascience"
+    posts = fetch_hot_posts(reddit, subreddit_name)
 
-    # 데이터 저장
-    output_file = os.path.join(os.getcwd(), "reddit_hot_posts.csv")
+    # 동적 경로 설정 및 데이터 저장
+    output_file = os.path.join(os.getcwd(), "data/reddit_raw.csv")
     save_to_csv(posts, output_file)
-[]
