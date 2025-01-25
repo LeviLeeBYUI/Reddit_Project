@@ -63,7 +63,7 @@ def fetch_hot_posts(reddit, subreddits, limit=500):
             print(f"Fetched {len(all_posts)} posts from subreddit: {subreddit_name}")
         except Exception as e:
             print(f"Error while fetching posts from {subreddit_name}: {e}")
-    
+
     return all_posts
 
 # 데이터 저장
@@ -78,10 +78,16 @@ if __name__ == "__main__":
     # Reddit API 연결
     reddit = fetch_reddit_data()
 
-    # 데이터 수집
-    subreddit_name = "datascience"
-    posts = fetch_hot_posts(reddit, subreddit_name)
+    # 서브레딧 리스트 설정
+    subreddits = ["datascience", "machinelearning", "bigdata", "analytics"]
 
-    # 동적 경로 설정 및 데이터 저장
+    # 데이터 수집
+    posts = fetch_hot_posts(reddit, subreddits)
+
+    # 데이터 저장
     output_file = os.path.join(os.getcwd(), "data/reddit_raw.csv")
     save_to_csv(posts, output_file)
+    
+
+print("Current working directory:", os.getcwd())
+
