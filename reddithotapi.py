@@ -79,7 +79,7 @@ if __name__ == "__main__":
     reddit = fetch_reddit_data()
 
     # 서브레딧 리스트 설정
-    subreddits = ["datascience", "machinelearning", "bigdata", "analytics"]
+    subreddits = ["datascience", "machinelearning", "bigdata", "analytics", "dataengineer"]
 
     # 데이터 수집
     posts = fetch_hot_posts(reddit, subreddits)
